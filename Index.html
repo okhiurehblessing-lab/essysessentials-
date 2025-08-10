@@ -1,830 +1,221 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Demo Store — Base64 Image Upload Demo</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --bg: #ffffff;
-      --card: #ffffff;
-      --text: #111827;
-      --muted: #6b7280;
-      --accent: #d97706;
-      --accent-700: #b45309;
-      --radius: 12px;
-      --shadow: 0 6px 18px rgba(16,24,40,0.06);
-      --max-width: 1100px;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Store Demo</title>
+<style>
+    :root {
+        --bg: #ffffff;
+        --text: #000000;
+        --primary: #3498db;
     }
-    .dark{
-      --bg: #0b1220;
-      --card: #071021;
-      --text: #e6eef8;
-      --muted: #9aa7b8;
-      --accent: #f59e0b;
-      --accent-700: #d97706;
-      --shadow: 0 6px 18px rgba(2,6,23,0.7);
+    [data-theme="dark"] {
+        --bg: #121212;
+        --text: #ffffff;
+        --primary: #9b59b6;
     }
-    *{box-sizing:border-box}
-    html,body,#app{height:100%}
-    body{
-      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
-      background:var(--bg); color:var(--text);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale; padding-bottom:64px;
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background-color: var(--bg);
+        color: var(--text);
+        transition: background 0.3s, color 0.3s;
     }
-
-    /* Header */
-    header.site{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 16px; gap:12px; position:sticky; top:0; z-index:50;
-      background:linear-gradient(0deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
-      backdrop-filter: blur(6px);
-      border-bottom:1px solid rgba(0,0,0,0.04);
+    header {
+        background: var(--primary);
+        color: white;
+        padding: 1em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .dark header.site{ background:rgba(2,6,23,0.5); border-bottom:1px solid rgba(255,255,255,0.03); }
-
-    .brand{display:flex;align-items:center;gap:12px}
-    .logo {
-      width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-700));
-      display:flex; align-items:center; justify-content:center; color:white; font-weight:700;
-      box-shadow:var(--shadow);
-      font-size:16px;
+    .container {
+        padding: 1em;
     }
-    .brand h1{margin:0; font-size:18px;}
-
-    .nav-right{display:flex; gap:8px; align-items:center;}
-    .btn{
-      background:var(--accent); color:#fff; padding:8px 12px; border-radius:10px; border:0; cursor:pointer;
-      font-weight:600; box-shadow:var(--shadow);
+    button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.5em 1em;
+        cursor: pointer;
+        border-radius: 5px;
     }
-    .btn.ghost{
-      background:transparent; color:var(--text); border:1px solid rgba(0,0,0,0.06);
+    input, select {
+        padding: 0.5em;
+        margin: 0.3em 0;
+        width: 100%;
     }
-    .btn.small{ padding:6px 8px; font-size:14px; border-radius:8px; }
-
-    /* Layout */
-    main.container{ max-width:var(--max-width); margin:18px auto; padding:0 16px; }
-    .grid{ display:grid; gap:18px; }
-    .products{ grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); margin-top:8px; }
-
-    .card{
-      background:var(--card); border-radius:var(--radius); padding:12px; box-shadow:var(--shadow);
-      display:flex; flex-direction:column; gap:10px; overflow:hidden;
+    .product {
+        border: 1px solid #ccc;
+        padding: 1em;
+        margin: 0.5em;
+        border-radius: 5px;
+        background: var(--bg);
     }
-    .product-image{ width:100%; aspect-ratio:1/1; border-radius:10px; object-fit:cover; background:#f3f4f6; display:block; }
-
-    .muted{ color:var(--muted); font-size:13px; }
-
-    /* Cart drawer */
-    #cartDrawer{
-      position:fixed; right:18px; bottom:18px; z-index:120; width:360px; max-width:calc(100% - 36px);
-      transform:translateY(0); transition:transform .2s ease; display:none;
-    }
-    #cartDrawer.open{ display:block; }
-
-    .cart-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 0 12px; }
-
-    /* Product detail modal */
-    .modal {
-      position:fixed; inset:0; background:rgba(2,6,23,0.4); display:flex; align-items:center; justify-content:center; z-index:200;
-    }
-    .modal .modal-card{ width:960px; max-width:96%; display:grid; grid-template-columns:1fr 380px; gap:18px; padding:18px; border-radius:12px; box-shadow:var(--shadow) }
-    @media (max-width:880px){ .modal .modal-card{ grid-template-columns:1fr; } }
-
-    /* Admin styles */
-    #adminPanel{ max-width:var(--max-width); margin:22px auto; padding:0 18px; }
-    .form-row{ display:flex; gap:8px; flex-wrap:wrap; }
-    .input, textarea { padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); width:100%; background:transparent; color:var(--text); }
-    .input[readonly]{ opacity:0.7 }
-    .small-muted{ font-size:13px; color:var(--muted) }
-
-    /* Product editor */
-    .editor-row{ display:flex; gap:12px; flex-wrap:wrap; }
-    .editor-side{ min-width:200px; max-width:320px; }
-
-    /* Email preview */
-    .email-preview{ position:fixed; left:18px; bottom:18px; z-index:210; background:var(--card); padding:12px; border-radius:12px; box-shadow:var(--shadow); max-width:420px; width:calc(100% - 36px); display:none; }
-    .email-preview.open{ display:block; }
-
-    /* Footer */
-    footer{ text-align:center; color:var(--muted); padding:30px 0 80px; }
-
-    /* small screens */
-    @media (max-width:600px){
-      header.site{ padding:12px; }
-      .brand h1{ font-size:16px }
-      .logo{ width:40px; height:40px; font-size:14px }
-    }
-  </style>
+    .hidden { display: none; }
+</style>
 </head>
 <body>
-  <div id="app">
-    <header class="site">
-      <div class="brand">
-        <div class="logo" id="logoTxt">DS</div>
-        <div>
-          <h1 id="storeName">Demo Store</h1>
-          <div class="muted" style="font-size:12px" id="storeTag">Sell anything. Simple demo.</div>
-        </div>
-      </div>
 
-      <div class="nav-right">
-        <div style="display:flex;align-items:center;gap:8px">
-          <button id="darkToggle" class="btn small ghost">🌙</button>
-          <button id="openAdmin" class="btn small ghost">Admin</button>
-        </div>
-        <button id="openCartBtn" class="btn">Cart (<span id="cartCount">0</span>)</button>
-      </div>
-    </header>
+<header>
+    <h1>My Store</h1>
+    <div>
+        <button id="darkToggle">Toggle Dark Mode</button>
+        <button onclick="showLogin()">Admin Login</button>
+        <button onclick="showCustomerLogin()">Account</button>
+    </div>
+</header>
 
-    <main class="container">
-      <section style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap">
-        <div>
-          <h2 style="margin:0">Featured products</h2>
-          <p class="muted" style="margin-top:6px">Modern demo shop — editable from Admin.</p>
-        </div>
+<div class="container">
+    <h2>Products</h2>
+    <div id="productList"></div>
 
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="searchInput" class="input" placeholder="Search products..." style="max-width:320px" />
-          <select id="sortSel" class="input" style="max-width:160px">
-            <option value="default">Sort: Featured</option>
-            <option value="price-asc">Price ↑</option>
-            <option value="price-desc">Price ↓</option>
-          </select>
-        </div>
-      </section>
-
-      <section id="productGrid" class="grid products"></section>
-
-      <footer>
-        <div class="tag">Demo • No real payments</div>
-        <div style="margin-top:8px">Made with ❤️ — editable design (light/dark)</div>
-      </footer>
-    </main>
-
-    <!-- Product modal -->
-    <div id="productModal" style="display:none" class="modal" aria-hidden="true">
-      <div class="modal-card card">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <img id="modalImg" class="product-image" src="" alt="product image" />
-          <div style="display:flex;gap:8px">
-            <img id="thumb1" class="product-image" style="height:72px; width:72px; object-fit:cover" />
-            <img id="thumb2" class="product-image" style="height:72px; width:72px; object-fit:cover" />
-            <img id="thumb3" class="product-image" style="height:72px; width:72px; object-fit:cover" />
-          </div>
-        </div>
-
-        <aside style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <h3 id="modalTitle">Product</h3>
-            <div class="muted">SKU: <span id="modalSKU">—</span></div>
-          </div>
-          <div class="muted" id="modalDesc">Description</div>
-          <div style="font-size:20px; font-weight:700">₦<span id="modalPrice">0</span></div>
-
-          <div style="display:flex;gap:8px">
-            <input id="qtySelect" class="input" value="1" style="width:80px" type="number" min="1" />
-            <button id="addToCartBtn" class="btn">Add to cart</button>
-            <button id="buyNowBtn" class="btn ghost">Buy now</button>
-          </div>
-
-          <div style="margin-top:6px" class="muted">Free demo shipping • Returns accepted within 7 days</div>
-          <div style="margin-top:auto;display:flex;gap:8px;align-items:center">
-            <button id="closeModal" class="btn small ghost">Close</button>
-          </div>
-        </aside>
-      </div>
+    <!-- Admin section -->
+    <div id="adminPanel" class="hidden">
+        <h3>Add Product</h3>
+        <input type="text" id="prodName" placeholder="Product Name">
+        <input type="number" id="prodPrice" placeholder="Price">
+        <input type="file" id="prodImage">
+        <button onclick="addProduct()">Add Product</button>
     </div>
 
-    <!-- Cart Drawer -->
-    <div id="cartDrawer">
-      <div class="card">
-        <div class="cart-head">
-          <strong>Cart</strong>
-          <div>
-            <button id="clearCart" class="btn small ghost">Clear</button>
-            <button id="checkoutBtn" class="btn small">Checkout</button>
-          </div>
-        </div>
-        <div id="cartItems" style="margin-top:8px; display:flex;flex-direction:column; gap:10px;"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-          <div class="muted">Total</div>
-          <div style="font-weight:700">₦<span id="cartTotal">0</span></div>
-        </div>
-      </div>
+    <!-- Cart -->
+    <div id="cartSection" class="hidden">
+        <h3>Your Cart</h3>
+        <div id="cartItems"></div>
+        <button onclick="checkout()">Proceed to Checkout</button>
     </div>
+</div>
 
-    <!-- Checkout Modal -->
-    <div id="checkoutModal" class="modal" style="display:none">
-      <div class="modal-card card" style="max-width:760px">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <h3>Checkout — Bank Transfer (Demo)</h3>
-          <div class="muted">Fill your details. You will see demo bank details and an email preview (console) with payment instructions.</div>
-
-          <div class="form-row">
-            <input id="custName" class="input" placeholder="Full name" />
-            <input id="custEmail" class="input" placeholder="Email" />
-            <input id="custPhone" class="input" placeholder="Phone (optional)" />
-          </div>
-
-          <textarea id="custAddress" class="input" placeholder="Delivery address (optional)" rows="3"></textarea>
-
-          <div style="display:flex;gap:8px;align-items:center">
-            <div style="flex:1" class="muted">
-              <strong>Bank (demo):</strong>
-              <div id="bankDetails">Demo Bank — 0000000000 — Demo Name</div>
-            </div>
-            <div style="text-align:right">
-              <div class="muted">Order total</div>
-              <div style="font-weight:700">₦<span id="checkoutTotal">0</span></div>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button id="checkoutCancel" class="btn small ghost">Cancel</button>
-            <button id="placeOrderBtn" class="btn">Place order (send instructions)</button>
-          </div>
-        </div>
-      </div>
+<!-- Login modal -->
+<div id="loginModal" class="hidden">
+    <div class="container">
+        <h3>Admin Login</h3>
+        <input type="email" id="adminEmail" placeholder="Email">
+        <input type="password" id="adminPass" placeholder="Password">
+        <button onclick="adminLogin()">Login</button>
+        <button onclick="closeLogin()">Close</button>
     </div>
+</div>
 
-    <!-- Admin modal -->
-    <div id="adminModal" class="modal" style="display:none">
-      <div class="modal-card card" style="max-width:980px; width:96%; display:flex; gap:18px; flex-direction:column;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h3>Admin Dashboard</h3>
-          <div style="display:flex;gap:8px;align-items:center">
-            <div id="adminEmailShow" class="muted small-muted">Not logged in</div>
-            <button id="adminLogout" class="btn small ghost" style="display:none">Logout</button>
-          </div>
-        </div>
-
-        <!-- Login form -->
-        <div id="adminLogin" style="display:block">
-          <div class="muted">Demo credentials: <strong>admin@demo.com</strong> / <strong>password</strong></div>
-          <div class="form-row" style="margin-top:12px">
-            <input id="loginEmail" class="input" placeholder="email" value="admin@demo.com" />
-            <input id="loginPass" type="password" class="input" placeholder="password" value="password" />
-            <button id="loginBtn" class="btn">Login</button>
-            <button id="closeAdmin" class="btn small ghost">Close</button>
-          </div>
-        </div>
-
-        <!-- Admin content -->
-        <div id="adminArea" style="display:none; gap:12px">
-          <div style="display:flex; gap:12px; flex-wrap:wrap">
-            <div style="flex:1; min-width:280px;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <strong>Products</strong>
-                <button id="newProductBtn" class="btn small">+ Add product</button>
-              </div>
-
-              <div id="productList" style="margin-top:12px; display:grid; gap:10px"></div>
-            </div>
-
-            <div style="min-width:300px; max-width:360px;">
-              <strong>Settings</strong>
-              <div style="margin-top:8px" class="card">
-                <div style="margin-bottom:8px" class="small-muted">Store name</div>
-                <input id="settingStoreName" class="input" />
-                <div style="margin-top:8px" class="small-muted">Bank details (shown at checkout)</div>
-                <input id="settingBankDetails" class="input" placeholder="Demo Bank — 0000000000 — Demo Name" />
-                <div style="margin-top:8px" class="small-muted">Logo initials (2 letters)</div>
-                <input id="settingLogo" class="input" maxlength="2" />
-                <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
-                  <button id="saveSettings" class="btn small">Save</button>
-                </div>
-              </div>
-
-              <div style="margin-top:12px">
-                <strong>Orders</strong>
-                <div id="orderList" style="margin-top:8px; display:flex;flex-direction:column; gap:8px"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+<!-- Customer login -->
+<div id="customerLoginModal" class="hidden">
+    <div class="container">
+        <h3>Customer Info</h3>
+        <input type="text" id="custName" placeholder="Your Name">
+        <input type="email" id="custEmail" placeholder="Your Email">
+        <input type="tel" id="custPhone" placeholder="Phone">
+        <button onclick="saveCustomer()">Save</button>
+        <button onclick="closeCustomerLogin()">Close</button>
     </div>
+</div>
 
-    <!-- Product editor modal (NEW for base64 upload) -->
-    <div id="editorModal" class="modal" style="display:none">
-      <div class="modal-card card" style="max-width:900px; width:96%; display:flex; gap:18px; flex-direction:column;">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <h3 id="editorTitle">Edit product</h3>
-          <div>
-            <button id="saveProductBtn" class="btn small">Save</button>
-            <button id="cancelEditBtn" class="btn small ghost">Cancel</button>
-          </div>
-        </div>
+<script>
+let products = [];
+let cart = [];
+let customer = {};
 
-        <div class="editor-row">
-          <div style="flex:1">
-            <div style="margin-bottom:6px" class="small-muted">Name</div>
-            <input id="editName" class="input" />
-            <div style="margin-top:8px" class="small-muted">SKU</div>
-            <input id="editSKU" class="input" />
-            <div style="margin-top:8px" class="small-muted">Price (NGN)</div>
-            <input id="editPrice" class="input" type="number" />
-            <div style="margin-top:8px" class="small-muted">Stock</div>
-            <input id="editStock" class="input" type="number" />
-            <div style="margin-top:8px" class="small-muted">Description</div>
-            <textarea id="editDesc" class="input" rows="4"></textarea>
-          </div>
+// Dark mode
+document.getElementById('darkToggle').addEventListener('click', () => {
+    let theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+});
+if(localStorage.getItem('theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+}
 
-          <div class="editor-side">
-            <div style="margin-bottom:8px" class="small-muted">Primary image</div>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <img id="editPreview" src="" style="width:100%; height:220px; object-fit:cover; border-radius:10px; background:#f3f4f6" alt="preview">
-              <input id="fileInput" type="file" accept="image/*" />
-              <div class="small-muted">You can paste an image URL instead of uploading.</div>
-              <input id="imageUrlInput" class="input" placeholder="Image URL (optional)" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+// Show modals
+function showLogin() {
+    document.getElementById('loginModal').classList.remove('hidden');
+}
+function closeLogin() {
+    document.getElementById('loginModal').classList.add('hidden');
+}
+function showCustomerLogin() {
+    document.getElementById('customerLoginModal').classList.remove('hidden');
+}
+function closeCustomerLogin() {
+    document.getElementById('customerLoginModal').classList.add('hidden');
+}
 
-    <!-- Email preview -->
-    <div id="emailPreview" class="email-preview"></div>
-  </div>
+// Admin login
+function adminLogin() {
+    let email = document.getElementById('adminEmail').value;
+    let pass = document.getElementById('adminPass').value;
+    if(email === 'admin@demo.com' && pass === 'password') {
+        document.getElementById('adminPanel').classList.remove('hidden');
+        alert('Admin logged in');
+        closeLogin();
+    } else {
+        alert('Wrong details');
+    }
+}
 
-  <script>
-    (function(){
-      // ---------- Helpers ----------
-      const $ = (sel, el=document) => el.querySelector(sel);
-      const uid = (n=8)=> Math.random().toString(36).slice(2,2+n);
-      const KEY_PRODUCTS = 'demo_products_v1';
-      const KEY_ORDERS = 'demo_orders_v1';
-      const KEY_SETTINGS = 'demo_settings_v1';
-      const KEY_CART = 'demo_cart_v1';
-      const KEY_AUTH = 'demo_auth_v1';
-      const KEY_UI = 'demo_ui_v1';
-
-      // Defaults
-      const defaultProducts = [
-        { id:'p1', name:'Luxe Serum', sku:'LS-001', price:3500, description:'Lightweight brightening serum. 30ml.', images:[], stock:12 },
-        { id:'p2', name:'Glow Day Cream', sku:'GC-002', price:2800, description:'Moisturizing day cream with SPF.', images:[], stock:8 },
-        { id:'p3', name:'Satin Perfume Oil', sku:'PO-003', price:4200, description:'Long-lasting perfume oil (10ml).', images:[], stock:6 }
-      ];
-      const defaultOrders = [];
-      const defaultSettings = {
-        storeName: 'Demo Store',
-        storeTag: 'Sell anything. Simple demo.',
-        bankDetails: 'Demo Bank — 0000000000 — Demo Name',
-        logoTxt: 'DS'
-      };
-
-      function load(key, fallback){
-        try { const raw = localStorage.getItem(key); if(!raw) return fallback; return JSON.parse(raw); } catch(e){ return fallback; }
-      }
-      function save(key, v){ localStorage.setItem(key, JSON.stringify(v)); }
-
-      if(!load(KEY_PRODUCTS)) save(KEY_PRODUCTS, defaultProducts);
-      if(!load(KEY_ORDERS)) save(KEY_ORDERS, defaultOrders);
-      if(!load(KEY_SETTINGS)) save(KEY_SETTINGS, defaultSettings);
-      if(!load(KEY_CART)) save(KEY_CART, []);
-      if(!load(KEY_AUTH)) save(KEY_AUTH, { loggedIn:false, email:null });
-
-      // State
-      let PRODUCTS = load(KEY_PRODUCTS, []);
-      let ORDERS = load(KEY_ORDERS, []);
-      let SETTINGS = load(KEY_SETTINGS, defaultSettings);
-      let CART = load(KEY_CART, []);
-      let AUTH = load(KEY_AUTH, { loggedIn:false, email:null });
-      let UI = load(KEY_UI, { dark: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) });
-
-      // Elements
-      const productGrid = $('#productGrid');
-      const cartCount = $('#cartCount');
-      const openCartBtn = $('#openCartBtn');
-      const cartDrawer = $('#cartDrawer');
-      const cartItemsEl = $('#cartItems');
-      const cartTotalEl = $('#cartTotal');
-      const clearCartBtn = $('#clearCart');
-      const checkoutBtn = $('#checkoutBtn');
-      const productModal = $('#productModal');
-      const modalImg = $('#modalImg');
-      const modalTitle = $('#modalTitle');
-      const modalDesc = $('#modalDesc');
-      const modalPrice = $('#modalPrice');
-      const modalSKU = $('#modalSKU');
-      const qtySelect = $('#qtySelect');
-      const addToCartBtn = $('#addToCartBtn');
-      const buyNowBtn = $('#buyNowBtn');
-      const closeModal = $('#closeModal');
-      const thumb1 = $('#thumb1'), thumb2 = $('#thumb2'), thumb3 = $('#thumb3');
-      const searchInput = $('#searchInput'), sortSel = $('#sortSel');
-
-      const checkoutModal = $('#checkoutModal');
-      const placeOrderBtn = $('#placeOrderBtn');
-      const checkoutCancel = $('#checkoutCancel');
-      const custName = $('#custName'), custEmail = $('#custEmail'), custPhone = $('#custPhone'), custAddress = $('#custAddress');
-      const checkoutTotal = $('#checkoutTotal'); const bankDetailsEl = $('#bankDetails');
-
-      const adminModal = $('#adminModal'), adminLogin = $('#adminLogin'), adminArea = $('#adminArea');
-      const loginBtn = $('#loginBtn'), loginEmail = $('#loginEmail'), loginPass = $('#loginPass');
-      const adminLogout = $('#adminLogout'), adminEmailShow = $('#adminEmailShow'), openAdmin = $('#openAdmin'), closeAdmin = $('#closeAdmin');
-
-      const productListEl = $('#productList'), newProductBtn = $('#newProductBtn');
-      const orderListEl = $('#orderList');
-      const settingStoreName = $('#settingStoreName'), settingBankDetails = $('#settingBankDetails'), settingLogo = $('#settingLogo'), saveSettings = $('#saveSettings');
-
-      // Editor elements (NEW)
-      const editorModal = $('#editorModal');
-      const editorTitle = $('#editorTitle');
-      const editName = $('#editName'), editSKU = $('#editSKU'), editPrice = $('#editPrice'), editStock = $('#editStock'), editDesc = $('#editDesc');
-      const editPreview = $('#editPreview'), fileInput = $('#fileInput'), imageUrlInput = $('#imageUrlInput');
-      const saveProductBtn = $('#saveProductBtn'), cancelEditBtn = $('#cancelEditBtn');
-
-      const emailPreview = $('#emailPreview');
-      const logoTxt = $('#logoTxt'), storeNameEl = $('#storeName'), storeTagEl = $('#storeTag');
-      const darkToggle = $('#darkToggle');
-
-      // UI apply
-      function applyUI(){ if(UI.dark) document.documentElement.classList.add('dark'), document.body.classList.add('dark'); else document.documentElement.classList.remove('dark'), document.body.classList.remove('dark'); }
-      applyUI();
-
-      // ---------- Rendering ----------
-      function renderProducts(list=PRODUCTS){
-        productGrid.innerHTML = '';
-        const q = (searchInput.value || '').trim().toLowerCase();
-        let arr = list.slice();
-        if(q) arr = arr.filter(p => (p.name+p.description+p.sku).toLowerCase().includes(q));
-        const sort = sortSel.value;
-        if(sort==='price-asc') arr.sort((a,b)=>a.price-b.price);
-        if(sort==='price-desc') arr.sort((a,b)=>b.price-a.price);
-
-        for(const p of arr){
-          const div = document.createElement('div'); div.className='card';
-          const imgSrc = p.images[0] || placeholderSVG(p.name);
-          div.innerHTML = `
-            <img src="${imgSrc}" alt="${escapeHtml(p.name)}" class="product-image">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start">
-              <div>
-                <div style="font-weight:600">${escapeHtml(p.name)}</div>
-                <div class="muted" style="font-size:13px">${escapeHtml(p.description)}</div>
-              </div>
-              <div style="text-align:right">
-                <div style="font-weight:700">₦${(p.price||0).toLocaleString()}</div>
-                <div class="muted" style="font-size:12px">Stock: ${p.stock||0}</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px; margin-top:8px">
-              <button class="btn small" data-action="view" data-id="${p.id}">View</button>
-              <button class="btn small ghost" data-action="add" data-id="${p.id}">Add</button>
-            </div>
-          `;
-          productGrid.appendChild(div);
+// Add product
+function addProduct() {
+    let name = document.getElementById('prodName').value;
+    let price = document.getElementById('prodPrice').value;
+    let file = document.getElementById('prodImage').files[0];
+    if(name && price && file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            products.push({ name, price, image: e.target.result });
+            renderProducts();
         }
-      }
+        reader.readAsDataURL(file);
+    } else {
+        alert('Please fill all fields');
+    }
+}
 
-      function renderCart(){
-        cartCount.textContent = CART.reduce((s,i)=>s+i.qty,0);
-        cartItemsEl.innerHTML = '';
-        let total=0;
-        for(const it of CART){
-          const p = PRODUCTS.find(x=>x.id===it.id);
-          if(!p) continue;
-          const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center';
-          row.innerHTML = `
-            <div style="display:flex;gap:8px;align-items:center">
-              <img src="${p.images[0]||''}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;background:#f3f4f6" />
-              <div style="min-width:140px">
-                <div style="font-weight:600">${p.name}</div>
-                <div class="muted" style="font-size:12px">₦${p.price.toLocaleString()} • x${it.qty}</div>
-              </div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-weight:700">₦ ${(p.price*it.qty).toLocaleString()}</div>
-              <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
-                <button class="btn small ghost" data-action="dec" data-id="${it.id}">−</button>
-                <button class="btn small ghost" data-action="inc" data-id="${it.id}">+</button>
-                <button class="btn small ghost" data-action="rem" data-id="${it.id}">Remove</button>
-              </div>
-            </div>
-          `;
-          cartItemsEl.appendChild(row);
-          total += p.price * it.qty;
-        }
-        cartTotalEl.textContent = total;
-        checkoutTotal.textContent = total;
-      }
+// Render products
+function renderProducts() {
+    let html = '';
+    products.forEach((p, i) => {
+        html += `<div class="product">
+            <img src="${p.image}" style="max-width:100%">
+            <h4>${p.name}</h4>
+            <p>$${p.price}</p>
+            <button onclick="addToCart(${i})">Add to Cart</button>
+        </div>`;
+    });
+    document.getElementById('productList').innerHTML = html;
+}
 
-      function placeholderSVG(title){
-        return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="100%" height="100%" fill="#f3f4f6"/><text x="50%" y="50%" font-size="36" text-anchor="middle" fill="#9ca3af" dy=".3em">${title}</text></svg>`);
-      }
+// Cart
+function addToCart(index) {
+    cart.push(products[index]);
+    document.getElementById('cartSection').classList.remove('hidden');
+    renderCart();
+}
+function renderCart() {
+    let html = '';
+    cart.forEach((c, i) => {
+        html += `<div>${c.name} - $${c.price}</div>`;
+    });
+    document.getElementById('cartItems').innerHTML = html;
+}
 
-      // ---------- Product modal ----------
-      let currentModalProduct = null;
-      function openProductModal(id){
-        const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
-        currentModalProduct = p;
-        modalImg.src = p.images[0] || placeholderSVG(p.name);
-        thumb1.src = p.images[0] || placeholderSVG(''); thumb2.src = p.images[1] || placeholderSVG(''); thumb3.src = p.images[2] || placeholderSVG('');
-        modalTitle.textContent = p.name; modalDesc.textContent = p.description; modalPrice.textContent = p.price; modalSKU.textContent = p.sku || '—';
-        qtySelect.value = 1; productModal.style.display = 'flex';
-      }
-      function closeProductModal(){ productModal.style.display='none'; currentModalProduct=null; }
+// Checkout
+function checkout() {
+    if(!customer.name) {
+        alert('Please log in as customer first');
+        return;
+    }
+    alert('Payment pending. We will confirm manually via email.');
+}
 
-      // ---------- Cart ----------
-      function addToCart(id, qty=1){
-        const p = PRODUCTS.find(x=>x.id===id);
-        if(!p) { alert('Product not found'); return; }
-        const found = CART.find(x=>x.id===id);
-        if(found) found.qty += qty; else CART.push({ id, qty });
-        save(KEY_CART, CART); renderCart(); toast('Added to cart');
-      }
+// Save customer
+function saveCustomer() {
+    customer.name = document.getElementById('custName').value;
+    customer.email = document.getElementById('custEmail').value;
+    customer.phone = document.getElementById('custPhone').value;
+    alert('Customer info saved');
+    closeCustomerLogin();
+}
+</script>
 
-      function toast(txt){
-        const el = document.createElement('div');
-        el.textContent = txt; el.style.position='fixed'; el.style.right='18px'; el.style.top='18px'; el.style.background='var(--card)'; el.style.padding='10px 14px'; el.style.borderRadius='8px'; el.style.boxShadow= 'var(--shadow)';
-        document.body.appendChild(el); setTimeout(()=>el.remove(), 1600);
-      }
-
-      // ---------- Checkout ----------
-      function openCheckout(){
-        if(CART.length===0){ alert('Cart is empty'); return; }
-        checkoutTotal.textContent = CART.reduce((sum,it)=> sum + (PRODUCTS.find(p=>p.id===it.id).price * it.qty), 0);
-        bankDetailsEl.textContent = SETTINGS.bankDetails || defaultSettings.bankDetails;
-        checkoutModal.style.display = 'flex';
-      }
-
-      function placeOrder(){
-        const name = custName.value.trim(); const email = custEmail.value.trim();
-        if(!name || !email) { alert('Please enter name and email'); return; }
-        const orderId = 'ord_' + uid(8);
-        const items = CART.map(it => ({ id: it.id, qty: it.qty, price: PRODUCTS.find(p=>p.id===it.id).price }));
-        const total = items.reduce((s,i)=> s + i.price * i.qty, 0);
-        const order = { id: orderId, items, total, currency:'NGN', status:'PENDING', customer:{ name, email, phone: custPhone.value, address: custAddress.value }, createdAt: Date.now() };
-        ORDERS.unshift(order); save(KEY_ORDERS, ORDERS);
-        CART = []; save(KEY_CART, CART); renderCart();
-        checkoutModal.style.display = 'none';
-
-        const subject = `Order received — ${order.id}`;
-        const body = `
-Hi ${name},
-
-Thanks for your order (${order.id}). Please transfer ₦${order.total.toLocaleString()} to:
-
-${SETTINGS.bankDetails}
-
-After payment, return to the shop and click "I've paid" in your order page (or contact the seller). When the seller confirms payment you'll receive an email.
-
-Order summary:
-${items.map(i=> '- ' + PRODUCTS.find(p=>p.id===i.id).name + ' x'+i.qty + ' — ₦'+ (i.price*i.qty).toLocaleString()).join('\\n')}
-
-Thanks,
-${SETTINGS.storeName}
-        `;
-        logEmail(email, subject, body); showEmailPreview(subject, body);
-        alert('Order placed. Payment instructions were emailed (demo). You can view/order status in Admin → Orders.');
-      }
-
-      // ---------- Email preview ----------
-      function logEmail(to, subj, body){
-        console.groupCollapsed('DEMO EMAIL → ' + subj + ' (to: ' + to + ')'); console.log(body); console.groupEnd();
-      }
-      function showEmailPreview(subj, body){
-        emailPreview.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong>${escapeHtml(subj)}</strong><button id="closeEmailPrev" class="btn small ghost">Close</button></div><pre style="white-space:pre-wrap;margin-top:8px;font-size:13px">${escapeHtml(body)}</pre>`;
-        emailPreview.classList.add('open'); $('#closeEmailPrev').onclick = ()=> emailPreview.classList.remove('open');
-      }
-      function escapeHtml(s){ return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-
-      // ---------- Admin auth ----------
-      function adminLoginFn(){
-        const em = (loginEmail.value||'').trim(); const pw = (loginPass.value||'').trim();
-        if(em==='admin@demo.com' && pw==='password'){
-          AUTH = { loggedIn:true, email:em }; save(KEY_AUTH, AUTH);
-          adminLogin.style.display='none'; adminArea.style.display='block'; adminLogout.style.display='inline-block'; adminEmailShow.textContent = em;
-          renderAdmin(); toast('Admin logged in');
-        } else { alert('Invalid demo credentials'); }
-      }
-      function adminLogoutFn(){ AUTH = { loggedIn:false, email:null }; save(KEY_AUTH, AUTH); adminLogin.style.display='block'; adminArea.style.display='none'; adminLogout.style.display='none'; adminEmailShow.textContent='Not logged in'; }
-
-      // ---------- Admin render & actions ----------
-      const defaultSettings = defaultSettings || { storeName:'Demo Store', bankDetails:'Demo Bank — 0000000000 — Demo Name', logoTxt:'DS' };
-
-      function renderAdmin(){
-        settingStoreName.value = SETTINGS.storeName || '';
-        settingBankDetails.value = SETTINGS.bankDetails || '';
-        settingLogo.value = SETTINGS.logoTxt || '';
-        productListEl.innerHTML = '';
-        for(const p of PRODUCTS){
-          const el = document.createElement('div'); el.className='card'; el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
-          el.innerHTML = `
-            <div>
-              <div style="font-weight:600">${escapeHtml(p.name)} <span class="muted" style="font-size:12px">(${escapeHtml(p.sku||'')})</span></div>
-              <div class="muted" style="font-size:13px">₦${p.price.toLocaleString()} • Stock: ${p.stock || 0}</div>
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn small ghost" data-action="edit" data-id="${p.id}">Edit</button>
-              <button class="btn small ghost" data-action="del" data-id="${p.id}">Delete</button>
-            </div>
-          `;
-          productListEl.appendChild(el);
-        }
-
-        orderListEl.innerHTML = '';
-        for(const o of ORDERS){
-          const el = document.createElement('div'); el.className='card'; el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
-          el.innerHTML = `
-            <div>
-              <div style="font-weight:600">${escapeHtml(o.customer.name)} — ₦${o.total.toLocaleString()}</div>
-              <div class="muted" style="font-size:13px">${o.id} • ${o.status} • ${new Date(o.createdAt).toLocaleString()}</div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              ${o.status==='PENDING' ? `<button class="btn small" data-action="markPaid" data-id="${o.id}">Mark paid</button>` : `<div class="muted small-muted">Paid</div>`}
-              <button class="btn small ghost" data-action="viewOrder" data-id="${o.id}">View</button>
-            </div>
-          `;
-          orderListEl.appendChild(el);
-        }
-      }
-
-      function addNewProduct(){
-        const id = 'p_' + uid(6);
-        const p = { id, name:'New product', sku:'SKU-'+Math.random().toString(36).slice(2,6).toUpperCase(), price:1000, description:'Description', images:[], stock:10 };
-        PRODUCTS.unshift(p); save(KEY_PRODUCTS, PRODUCTS); renderAdmin(); renderProducts();
-        openEditor(p.id, true);
-      }
-
-      // open editor for add/edit
-      let editingId = null;
-      function openEditor(id, isNew=false){
-        const p = PRODUCTS.find(x=>x.id===id);
-        editingId = id;
-        editorTitle.textContent = isNew ? 'Add product' : 'Edit product';
-        editName.value = p.name || '';
-        editSKU.value = p.sku || '';
-        editPrice.value = p.price || 0;
-        editStock.value = p.stock || 0;
-        editDesc.value = p.description || '';
-        editPreview.src = p.images && p.images[0] ? p.images[0] : placeholderSVG(p.name);
-        imageUrlInput.value = p.images && p.images[0] && p.images[0].startsWith('http') ? p.images[0] : '';
-        fileInput.value = '';
-        editorModal.style.display = 'flex';
-      }
-
-      // handle file input -> base64 conversion
-      fileInput.addEventListener('change', async (evt) => {
-        const f = evt.target.files && evt.target.files[0];
-        if(!f) return;
-        // basic size check (avoid huge images)
-        const maxMb = 3;
-        if(f.size > maxMb * 1024 * 1024){ alert('File too large. Please choose under ' + maxMb + ' MB.'); return; }
-        const reader = new FileReader();
-        reader.onload = function(e){
-          const b64 = e.target.result; // this is data:<mime>;base64,.....
-          editPreview.src = b64;
-          imageUrlInput.value = ''; // clear URL when uploading
-          // update preview, store on save
-        };
-        reader.readAsDataURL(f);
-      });
-
-      // Save product from editor
-      saveProductBtn.addEventListener('click', () => {
-        if(!editingId) return;
-        const p = PRODUCTS.find(x=>x.id===editingId);
-        if(!p) return;
-        p.name = editName.value.trim() || p.name;
-        p.sku = editSKU.value.trim() || p.sku;
-        p.price = parseInt(editPrice.value) || p.price;
-        p.stock = parseInt(editStock.value) || p.stock;
-        p.description = editDesc.value.trim() || p.description;
-        // choose image: uploaded preview (data URL) > imageUrlInput > existing
-        const previewSrc = editPreview.src;
-        if(previewSrc && previewSrc.startsWith('data:')) {
-          p.images[0] = previewSrc;
-        } else if(imageUrlInput.value && imageUrlInput.value.trim() !== '') {
-          p.images[0] = imageUrlInput.value.trim();
-        }
-        save(KEY_PRODUCTS, PRODUCTS);
-        editorModal.style.display = 'none';
-        renderAdmin(); renderProducts();
-        toast('Product saved');
-      });
-
-      cancelEditBtn.addEventListener('click', ()=> { editorModal.style.display = 'none'; });
-
-      // Delete product
-      productListEl.addEventListener('click', (e)=> {
-        const btn = e.target.closest('button'); if(!btn) return;
-        const action = btn.dataset.action, id = btn.dataset.id;
-        if(action === 'edit') openEditor(id, false);
-        if(action === 'del') {
-          if(confirm('Delete this product?')) {
-            PRODUCTS = PRODUCTS.filter(x=>x.id!==id);
-            save(KEY_PRODUCTS, PRODUCTS); renderAdmin(); renderProducts();
-          }
-        }
-      });
-
-      // Orders actions
-      orderListEl.addEventListener('click', (e)=> {
-        const btn = e.target.closest('button'); if(!btn) return;
-        const action = btn.dataset.action, id = btn.dataset.id;
-        if(action === 'markPaid') markOrderPaid(id);
-        if(action === 'viewOrder') {
-          const o = ORDERS.find(x=>x.id===id);
-          if(!o) return alert(JSON.stringify(o, null, 2));
-        }
-      });
-
-      function markOrderPaid(id){
-        const o = ORDERS.find(x=>x.id===id); if(!o) return;
-        o.status = 'PAID'; save(KEY_ORDERS, ORDERS); renderAdmin();
-        const subj = `Payment confirmed — ${o.id}`;
-        const body = `Hi ${o.customer.name},\n\nWe have confirmed your payment for order ${o.id}. Your order is now being processed.\n\nThanks,\n${SETTINGS.storeName}`;
-        logEmail(o.customer.email, subj, body); showEmailPreview(subj, body);
-        alert('Order marked as paid and demo email sent.');
-      }
-
-      // Settings save
-      saveSettings.addEventListener('click', () => {
-        SETTINGS.storeName = settingStoreName.value || SETTINGS.storeName;
-        SETTINGS.bankDetails = settingBankDetails.value || SETTINGS.bankDetails;
-        SETTINGS.logoTxt = (settingLogo.value || SETTINGS.logoTxt).substring(0,2).toUpperCase();
-        logoTxt.textContent = SETTINGS.logoTxt; storeNameEl.textContent = SETTINGS.storeName; storeTagEl.textContent = SETTINGS.storeTag || '';
-        save(KEY_SETTINGS, SETTINGS); toast('Settings saved');
-      });
-
-      // ---------- End admin ----------
-
-      // Event wiring & init
-      function init(){
-        if(UI.dark) document.documentElement.classList.add('dark');
-        renderProducts(); renderCart(); renderAdmin();
-
-        logoTxt.textContent = SETTINGS.logoTxt || 'DS';
-        storeNameEl.textContent = SETTINGS.storeName || defaultSettings.storeName;
-        storeTagEl.textContent = SETTINGS.storeTag || defaultSettings.storeTag;
-        bankDetailsEl.textContent = SETTINGS.bankDetails || defaultSettings.bankDetails;
-        settingStoreName.value = SETTINGS.storeName;
-        settingBankDetails.value = SETTINGS.bankDetails;
-        settingLogo.value = SETTINGS.logoTxt;
-
-        // product grid delegation
-        productGrid.addEventListener('click', (e)=>{
-          const btn = e.target.closest('button'); if(!btn) return;
-          const action = btn.dataset.action; const id = btn.dataset.id;
-          if(action==='view') openProductModal(id);
-          if(action==='add') addToCart(id,1);
-        });
-
-        cartItemsEl.addEventListener('click',(e)=>{
-          const btn = e.target.closest('button'); if(!btn) return;
-          const action = btn.dataset.action; const id = btn.dataset.id;
-          const idx = CART.findIndex(x=>x.id===id);
-          if(action==='inc'){ if(idx>-1){ CART[idx].qty++; save(KEY_CART,CART); renderCart(); } }
-          if(action==='dec'){ if(idx>-1){ CART[idx].qty = Math.max(1,CART[idx].qty-1); save(KEY_CART,CART); renderCart(); } }
-          if(action==='rem'){ if(idx>-1){ CART.splice(idx,1); save(KEY_CART,CART); renderCart(); } }
-        });
-
-        openCartBtn.onclick = ()=> cartDrawer.classList.toggle('open');
-        clearCartBtn.onclick = ()=> { if(confirm('Clear cart?')) CART = [], save(KEY_CART,CART), renderCart(); };
-        checkoutBtn.onclick = openCheckout;
-
-        addToCartBtn.onclick = ()=> { if(currentModalProduct) addToCart(currentModalProduct.id, parseInt(qtySelect.value||1)); closeProductModal(); };
-        buyNowBtn.onclick = ()=> { if(currentModalProduct) { addToCart(currentModalProduct.id, parseInt(qtySelect.value||1)); openCheckout(); closeProductModal(); } };
-        closeModal.onclick = closeProductModal;
-
-        placeOrderBtn.onclick = placeOrder;
-        checkoutCancel.onclick = ()=> checkoutModal.style.display='none';
-
-        openAdmin.onclick = ()=> { adminModal.style.display='flex'; if(AUTH.loggedIn){ adminLogin.style.display='none'; adminArea.style.display='block'; adminLogout.style.display='inline-block'; adminEmailShow.textContent = AUTH.email } else { adminLogin.style.display='block'; adminArea.style.display='none'; adminLogout.style.display='none'; adminEmailShow.textContent='Not logged in'} };
-        closeAdmin.onclick = ()=> adminModal.style.display='none';
-        loginBtn.onclick = adminLoginFn;
-        adminLogout.onclick = adminLogoutFn;
-
-        newProductBtn.onclick = addNewProduct;
-
-        searchInput.oninput = ()=> renderProducts();
-        sortSel.onchange = ()=> renderProducts();
-
-        // dark toggle
-        darkToggle.onclick = ()=> { UI.dark = !UI.dark; applyUI(); save(KEY_UI, UI); darkToggle.textContent = UI.dark ? '☀️' : '🌙'; };
-        darkToggle.textContent = UI.dark ? '☀️' : '🌙';
-
-        // modal close on backdrop
-        productModal.addEventListener('click', (e)=>{ if(e.target===productModal) closeProductModal(); });
-        adminModal.addEventListener('click', (e)=>{ if(e.target===adminModal) adminModal.style.display='none'; });
-        editorModal.addEventListener('click', (e)=>{ if(e.target===editorModal) editorModal.style.display='none'; });
-
-        renderProducts(); renderCart(); renderAdmin();
-      }
-
-      // small helper
-      window.__DEMO = {
-        refresh: ()=>{ PRODUCTS = load(KEY_PRODUCTS); ORDERS = load(KEY_ORDERS); SETTINGS = load(KEY_SETTINGS); CART = load(KEY_CART); renderProducts(); renderCart(); renderAdmin(); },
-        state: ()=>({ PRODUCTS, ORDERS, SETTINGS, CART })
-      };
-
-      init();
-    })();
-  </script>
 </body>
 </html>
